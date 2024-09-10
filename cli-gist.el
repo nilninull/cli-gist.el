@@ -33,6 +33,23 @@
   "Listing Github Gist"
   :group 'tools)
 
+(defcustom cli-gist-list-options nil
+  "Specify options for the command `gh gist list'."
+  :type '(repeat :tag "options" (choice (const :tag "Add Public Option" "--public")
+					(const :tag "Add Secret Option" "--secret")
+					(const :tag "Add Limit Option (must be specified with the Number Option)" "--limit")
+					(string :tag "Add Number Option" "10")))
+  :set (lambda (symbol value)
+	 (let (index)
+	   (if (and (setq index (cl-position-if #'(lambda (str)
+						    (> (string-to-number str) 0))
+						value))
+		    (not (or (member "--limit" value)
+			     (member "-L" value))))
+	       (set-default symbol `(,@(take index value) "--limit" ,@(nthcdr index value)))
+	     (set-default symbol value))))
+  :group 'cli-gist)
+
 (defface cli-gist-public-face
   '((t (:inherit font-lock-type-face)))
   "Face for the `public' keyword in cli-gist mode"
@@ -48,7 +65,7 @@
   (let (description-length)
     (setq tabulated-list-entries
 	  (with-temp-buffer
-	    (call-process "gh" nil t nil "gist" "list")
+	    (apply #'call-process "gh" nil t nil "gist" "list" cli-gist-list-options)
 	    (cl-loop for line in (split-string (buffer-string) "\n" t)
 		     collect (let ((items (split-string line "\t")))
 			       (push (length (cl-second items)) description-length)
