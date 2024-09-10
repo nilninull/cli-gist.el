@@ -1,6 +1,6 @@
 ;;; cli-gist.el --- Listing Github Gist       -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2023  nilninull
+;; Copyright (C) 2023, 2024  nilninull
 
 ;; Author: nilninull <nilninull@gmail.com>
 ;; Keywords: tools
@@ -29,6 +29,20 @@
 
 ;;; Code:
 
+(defgroup cli-gist ()
+  "Listing Github Gist"
+  :group 'tools)
+
+(defface cli-gist-public-face
+  '((t (:inherit font-lock-type-face)))
+  "Face for the `public' keyword in cli-gist mode"
+  :group 'cli-gist)
+
+(defface cli-gist-secret-face
+  '((t (:inherit font-lock-warning-face)))
+  "Face for the `secret' keyword in cli-gist mode"
+  :group 'cli-gist)
+
 (defun cli-gist--refresh ()
   "Update entries by gh gist list command."
   (let (description-length)
@@ -48,6 +62,9 @@
 					'("time" 20 t))))
   (tabulated-list-init-header))
 
+(defvar cli-gist-font-lock-keywords '(("\\<\\(?1:public\\)\\>\\s-+[-[:digit:]]+T[:[:digit:]]+Z$" 1 'cli-gist-public-face)
+				      ("\\<\\(?1:secret\\)\\>\\s-+[-[:digit:]]+T[:[:digit:]]+Z$" 1 'cli-gist-secret-face)))
+
 (defvar cli-gist-list-mode-map (let ((map (make-sparse-keymap)))
 				 (set-keymap-parent map tabulated-list-mode-map)
 				 (define-key map "W" 'cli-gist-web-view)
@@ -59,6 +76,7 @@
 
 (define-derived-mode cli-gist-list-mode tabulated-list-mode "Gist"
   "Major mode for listing the Github Gist files."
+  (setq font-lock-defaults '(cli-gist-font-lock-keywords))
   (add-hook 'tabulated-list-revert-hook 'cli-gist--refresh nil t))
 
 (defun cli-gist-edit ()
